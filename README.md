@@ -210,6 +210,13 @@ Com credenciais válidas, o aviso de modo demonstração desaparece.
 
 ## Validar no navegador (deploy na Vercel)
 
+### 🔗 Versão publicada
+
+**https://projeto-integrador-mvp-git-main-pedro-queirozs-projects.vercel.app**
+
+Abra o link e entre com `joao@exemplo.com` / `123456` (trabalhador) ou
+`buffet@exemplo.com` / `123456` (empregador). As contas aparecem na própria tela de login.
+
 O aplicativo tem alvo **web** (`react-native-web`), então dá para publicar uma versão
 navegável — útil para o professor ou um usuário de teste avaliar **sem instalar nada**.
 
@@ -256,6 +263,15 @@ Vercel lê o `vercel.json` automaticamente. Se ainda falhar, confira em
 **Settings → Build & Deployment** se **Build Command** e **Output Directory** estão como
 `npm run build` e `dist` — uma configuração antiga salva no painel tem prioridade sobre o
 arquivo.
+
+### Dois detalhes que causam 404 e não estão no código
+
+1. **Proteção de deploy.** Se o projeto estiver com *Vercel Authentication* ligada, toda
+   URL `.vercel.app` redireciona para o login da Vercel e ninguém de fora consegue abrir.
+   Desligue em **Settings → Deployment Protection → Vercel Authentication**.
+2. **Domínio já ocupado.** O endereço `projeto-integrador-mvp.vercel.app` pertence a outro
+   projeto da mesma conta. A URL válida deste MVP é a do próprio projeto, com o sufixo do
+   time — a que está no topo desta seção.
 
 Para testar o build localmente antes de publicar:
 
