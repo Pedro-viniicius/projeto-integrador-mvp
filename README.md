@@ -24,6 +24,7 @@ e
 - [Como executar](#como-executar)
 - [Variáveis de ambiente](#variáveis-de-ambiente)
 - [Configurar o Supabase](#configurar-o-supabase)
+- [Validar no navegador (deploy na Vercel)](#validar-no-navegador-deploy-na-vercel)
 - [Algoritmo de compatibilidade](#algoritmo-de-compatibilidade)
 - [Banco de dados](#banco-de-dados)
 - [Privacidade](#privacidade)
@@ -160,6 +161,7 @@ Para testar no celular, instale o **Expo Go** e leia o QR Code exibido no termin
 | `npm run typecheck` | Checagem de tipos do TypeScript |
 | `npm run lint` | ESLint |
 | `npm test` | Testes automatizados (Jest) |
+| `npm run build` | Gera o site estático em `dist/` (usado pela Vercel) |
 
 ---
 
@@ -203,6 +205,67 @@ cp .env.example .env
 6. Reinicie o Metro: `npm start -c`.
 
 Com credenciais válidas, o aviso de modo demonstração desaparece.
+
+---
+
+## Validar no navegador (deploy na Vercel)
+
+O aplicativo tem alvo **web** (`react-native-web`), então dá para publicar uma versão
+navegável — útil para o professor ou um usuário de teste avaliar **sem instalar nada**.
+
+Como não há credenciais configuradas na Vercel, a versão publicada roda em **modo
+demonstração**, com as contas de teste visíveis na própria tela de login.
+
+### Configuração já incluída no repositório
+
+| Arquivo | Papel |
+| --- | --- |
+| `package.json` → `"build": "expo export --platform web"` | Gera o site estático em `dist/` |
+| `vercel.json` | Diz à Vercel o comando de build, a pasta de saída e o *rewrite* de rotas |
+
+O `vercel.json` é o que evita o erro **404**:
+
+```json
+{
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "framework": null,
+  "rewrites": [
+    { "source": "/((?!_expo|assets|favicon.ico|metadata.json).*)", "destination": "/index.html" }
+  ]
+}
+```
+
+O app é uma **SPA**: o build gera um único `index.html` e o roteamento acontece no
+navegador. Sem o *rewrite*, a Vercel procura um arquivo em `/trabalhador/inicio`, não
+encontra e devolve 404. A exceção da expressão preserva os arquivos reais (`_expo`,
+`assets`), para que um script inexistente continue dando 404 de verdade em vez de receber
+HTML.
+
+### Passo a passo
+
+1. Na Vercel: **Add New → Project → Import Git Repository** e escolha
+   `projeto-integrador-mvp`.
+2. Em **Framework Preset**, deixe **Other**. O `vercel.json` cuida do resto.
+3. Não é preciso configurar variável de ambiente nenhuma — sem elas, entra o modo
+   demonstração.
+4. **Deploy**.
+
+Se o projeto já estava vinculado e deu 404, basta um novo deploy depois deste commit: a
+Vercel lê o `vercel.json` automaticamente. Se ainda falhar, confira em
+**Settings → Build & Deployment** se **Build Command** e **Output Directory** estão como
+`npm run build` e `dist` — uma configuração antiga salva no painel tem prioridade sobre o
+arquivo.
+
+Para testar o build localmente antes de publicar:
+
+```bash
+npm run build      # gera dist/
+npx serve dist -s  # o -s serve a SPA com o mesmo fallback da Vercel
+```
+
+> A versão web serve para **avaliação e demonstração**. O produto foi desenhado para
+> celular: use o Expo Go para ver a experiência real.
 
 ---
 
