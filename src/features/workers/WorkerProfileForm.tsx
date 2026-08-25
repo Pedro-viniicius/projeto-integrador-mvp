@@ -4,7 +4,7 @@ import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { AvailabilityGrid } from '@/components/AvailabilityGrid';
 import { SkillPicker } from '@/components/SkillPicker';
-import { AppText, Button, Card, OptionGroup, TextField } from '@/components/ui';
+import { AppText, Button, FormSection, OptionGroup, TextField, useToast } from '@/components/ui';
 import { countSlots, emptyAvailability } from '@/lib/availability';
 import { formatPhone } from '@/lib/format';
 import { colors, spacing } from '@/lib/theme';
@@ -31,6 +31,7 @@ export function WorkerProfileForm({
   onSubmit,
   showStatus = false,
 }: WorkerProfileFormProps) {
+  const toast = useToast();
   const [formError, setFormError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -58,7 +59,9 @@ export function WorkerProfileForm({
     try {
       await onSubmit(values);
     } catch (error) {
-      setFormError(error instanceof Error ? error.message : 'Não foi possível salvar.');
+      const message = error instanceof Error ? error.message : 'Não foi possível salvar.';
+      setFormError(message);
+      toast.error(message);
     } finally {
       setSaving(false);
     }
@@ -66,8 +69,7 @@ export function WorkerProfileForm({
 
   return (
     <View style={{ gap: spacing.lg }}>
-      <Card>
-        <AppText variant="section">Sobre você</AppText>
+      <FormSection step={1} title="Sobre você" description="Como o empregador vai te conhecer.">
 
         <Controller
           control={control}
@@ -96,6 +98,7 @@ export function WorkerProfileForm({
               onBlur={field.onBlur}
               multiline
               maxLength={280}
+              showCounter
               error={fieldState.error?.message}
             />
           )}
@@ -113,17 +116,18 @@ export function WorkerProfileForm({
               onBlur={field.onBlur}
               multiline
               maxLength={800}
+              showCounter
               error={fieldState.error?.message}
             />
           )}
         />
-      </Card>
+      </FormSection>
 
-      <Card>
-        <AppText variant="section">Contato e local</AppText>
-        <AppText variant="caption" muted>
-          Seu telefone só aparece para o empregador depois que ele aceitar seu interesse.
-        </AppText>
+      <FormSection
+        step={2}
+        title="Contato e local"
+        description="Seu telefone só aparece depois que o empregador aceitar seu interesse."
+      >
 
         <Controller
           control={control}
@@ -170,9 +174,9 @@ export function WorkerProfileForm({
             />
           )}
         />
-      </Card>
+      </FormSection>
 
-      <Card>
+      <FormSection step={3} title="Tipo de trabalho" description="O que você aceita.">
         <Controller
           control={control}
           name="employmentPreference"
@@ -190,9 +194,9 @@ export function WorkerProfileForm({
             />
           )}
         />
-      </Card>
+      </FormSection>
 
-      <Card>
+      <FormSection step={4} title="Suas habilidades" description="O que você sabe fazer.">
         <Controller
           control={control}
           name="skills"
@@ -206,10 +210,13 @@ export function WorkerProfileForm({
             />
           )}
         />
-      </Card>
+      </FormSection>
 
-      <Card>
-        <AppText variant="section">Quando você pode trabalhar?</AppText>
+      <FormSection
+        step={5}
+        title="Quando você pode trabalhar?"
+        description="É o critério com maior peso no match."
+      >
         <AppText variant="caption" muted>
           Toque nos horários livres. {countSlots(availability)} horário(s) marcado(s).
         </AppText>
@@ -227,10 +234,10 @@ export function WorkerProfileForm({
             </View>
           )}
         />
-      </Card>
+      </FormSection>
 
       {showStatus ? (
-        <Card>
+        <FormSection step={6} title="Situação do perfil" description="Controle sua visibilidade.">
           <Controller
             control={control}
             name="status"
@@ -246,7 +253,7 @@ export function WorkerProfileForm({
               />
             )}
           />
-        </Card>
+        </FormSection>
       ) : null}
 
       {formError ? (
@@ -255,7 +262,7 @@ export function WorkerProfileForm({
         </AppText>
       ) : null}
 
-      <Button label={submitLabel} onPress={submit} loading={saving} />
+      <Button label={submitLabel} size="lg" fullWidth icon="checkmark" onPress={submit} loading={saving} />
     </View>
   );
 }

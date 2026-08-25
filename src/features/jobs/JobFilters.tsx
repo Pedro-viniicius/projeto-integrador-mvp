@@ -1,6 +1,6 @@
 import React from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
-import { AppText, Chip } from '@/components/ui';
+import { AppText, Button, Card, Chip } from '@/components/ui';
 import { PERIODS, PERIOD_LABEL, WEEKDAYS, WEEKDAY_SHORT } from '@/lib/labels';
 import { displaySkill, normalizeSkill, SUGGESTED_SKILLS } from '@/lib/skills';
 import { spacing } from '@/lib/theme';
@@ -50,16 +50,25 @@ export function applyJobFilters(jobs: Job[], filters: JobFilterState): Job[] {
 interface JobFiltersProps {
   value: JobFilterState;
   onChange: (next: JobFilterState) => void;
+  /** Quando informado, exibe o botão de limpar dentro do painel. */
+  onClear?: () => void;
 }
 
 /** Barra de filtros horizontal, com rótulos curtos e áreas de toque grandes. */
-export function JobFilters({ value, onChange }: JobFiltersProps) {
+export function JobFilters({ value, onChange, onClear }: JobFiltersProps) {
   const toggle = <K extends keyof JobFilterState>(key: K, next: JobFilterState[K]) => {
     onChange({ ...value, [key]: value[key] === next ? null : next });
   };
 
   return (
-    <View style={styles.wrapper}>
+    <Card padding="lg" style={styles.wrapper}>
+      <View style={styles.head}>
+        <AppText variant="subsection">Filtrar</AppText>
+        {onClear ? (
+          <Button label="Limpar" variant="ghost" size="sm" icon="close" onPress={onClear} />
+        ) : null}
+      </View>
+
       <Row label="Tipo de trabalho">
         <Chip
           label="CLT"
@@ -105,7 +114,7 @@ export function JobFilters({ value, onChange }: JobFiltersProps) {
           />
         ))}
       </Row>
-    </View>
+    </Card>
   );
 }
 
@@ -128,6 +137,7 @@ function Row({ label, children }: { label: string; children: React.ReactNode }) 
 
 const styles = StyleSheet.create({
   wrapper: { gap: spacing.md },
+  head: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   row: { gap: spacing.xs },
   chips: { flexDirection: 'row', gap: spacing.sm, paddingRight: spacing.lg },
 });

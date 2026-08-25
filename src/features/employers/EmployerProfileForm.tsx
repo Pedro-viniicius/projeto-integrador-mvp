@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View } from 'react-native';
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { AppText, Button, Card, TextField } from '@/components/ui';
+import { AppText, Button, FormSection, TextField, useToast } from '@/components/ui';
 import { formatPhone } from '@/lib/format';
 import { colors, spacing } from '@/lib/theme';
 import type { EmployerProfile } from '@/types/domain';
@@ -22,6 +22,7 @@ export function EmployerProfileForm({
   submitLabel,
   onSubmit,
 }: EmployerProfileFormProps) {
+  const toast = useToast();
   const [formError, setFormError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -42,7 +43,9 @@ export function EmployerProfileForm({
     try {
       await onSubmit(values);
     } catch (error) {
-      setFormError(error instanceof Error ? error.message : 'Não foi possível salvar.');
+      const message = error instanceof Error ? error.message : 'Não foi possível salvar.';
+      setFormError(message);
+      toast.error(message);
     } finally {
       setSaving(false);
     }
@@ -50,8 +53,7 @@ export function EmployerProfileForm({
 
   return (
     <View style={{ gap: spacing.lg }}>
-      <Card>
-        <AppText variant="section">Sobre o seu negócio</AppText>
+      <FormSection step={1} title="Sobre o seu negócio" description="É o que o candidato vê primeiro.">
 
         <Controller
           control={control}
@@ -81,14 +83,14 @@ export function EmployerProfileForm({
               onBlur={field.onBlur}
               multiline
               maxLength={500}
+              showCounter
               error={fieldState.error?.message}
             />
           )}
         />
-      </Card>
+      </FormSection>
 
-      <Card>
-        <AppText variant="section">Contato e local</AppText>
+      <FormSection step={2} title="Contato e local" description="Como o candidato fala com você.">
 
         <Controller
           control={control}
@@ -135,7 +137,7 @@ export function EmployerProfileForm({
             />
           )}
         />
-      </Card>
+      </FormSection>
 
       {formError ? (
         <AppText variant="small" color={colors.danger}>
@@ -143,7 +145,7 @@ export function EmployerProfileForm({
         </AppText>
       ) : null}
 
-      <Button label={submitLabel} onPress={submit} loading={saving} />
+      <Button label={submitLabel} size="lg" fullWidth icon="checkmark" onPress={submit} loading={saving} />
     </View>
   );
 }

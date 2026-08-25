@@ -4,23 +4,32 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { AppText } from '@/components/ui';
 import { useUnreadCount } from '@/features/notifications/hooks';
-import { colors, radius, spacing } from '@/lib/theme';
+import { useBreakpoint } from '@/hooks/useBreakpoint';
+import { useInteractionState } from '@/hooks/useInteractionState';
+import { colors, radius, spacing, TOUCH_TARGET } from '@/lib/theme';
 
-/** Indicador de notificações no cabeçalho (RF-016). */
+/**
+ * Sino de notificações (RF-016).
+ *
+ * Só aparece abaixo de 1200px — no desktop, "Notificações" é item da sidebar.
+ */
 export function NotificationButton({ userId }: { userId: string | undefined }) {
   const router = useRouter();
   const unread = useUnreadCount(userId);
+  const { isDesktop } = useBreakpoint();
+  const { hovered, focused, handlers } = useInteractionState();
+
+  if (isDesktop) return null;
 
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={
-        unread > 0 ? `Notificações, ${unread} não lidas` : 'Notificações'
-      }
+      accessibilityLabel={unread > 0 ? `Notificações, ${unread} não lidas` : 'Notificações'}
       onPress={() => router.push('/notificacoes')}
-      style={({ pressed }) => [styles.button, pressed && styles.pressed]}
+      {...handlers}
+      style={[styles.button, hovered && styles.hovered, focused && styles.focused]}
     >
-      <Ionicons name="notifications-outline" size={22} color={colors.text} />
+      <Ionicons name="notifications-outline" size={21} color={colors.text} />
       {unread > 0 ? (
         <View style={styles.badge}>
           <AppText variant="caption" color={colors.textInverse}>
@@ -34,22 +43,23 @@ export function NotificationButton({ userId }: { userId: string | undefined }) {
 
 const styles = StyleSheet.create({
   button: {
-    width: 48,
-    height: 48,
-    borderRadius: radius.pill,
+    width: TOUCH_TARGET,
+    height: TOUCH_TARGET,
+    borderRadius: radius.md,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.border,
   },
-  pressed: { opacity: 0.85 },
+  hovered: { backgroundColor: colors.surfaceAlt, borderColor: colors.borderStrong },
+  focused: { borderColor: colors.focus },
   badge: {
     position: 'absolute',
-    top: 4,
-    right: 4,
-    minWidth: 20,
-    height: 20,
+    top: 5,
+    right: 5,
+    minWidth: 18,
+    height: 18,
     paddingHorizontal: spacing.xs,
     borderRadius: radius.pill,
     backgroundColor: colors.danger,

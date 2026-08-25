@@ -49,6 +49,9 @@ export function ContactButton({ phone, message, label, onContacted }: ContactBut
     <>
       <Button
         label={label ?? 'Conversar pelo WhatsApp'}
+        icon="logo-whatsapp"
+        size="lg"
+        fullWidth
         onPress={() => void open()}
         accessibilityHint="Abre o WhatsApp com uma mensagem pronta"
       />
