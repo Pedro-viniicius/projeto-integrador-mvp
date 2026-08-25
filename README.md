@@ -25,6 +25,7 @@ e
 - [Variáveis de ambiente](#variáveis-de-ambiente)
 - [Configurar o Supabase](#configurar-o-supabase)
 - [Validar no navegador (deploy na Vercel)](#validar-no-navegador-deploy-na-vercel)
+- [Design system e responsividade](#design-system-e-responsividade)
 - [Algoritmo de compatibilidade](#algoritmo-de-compatibilidade)
 - [Banco de dados](#banco-de-dados)
 - [Privacidade](#privacidade)
@@ -282,6 +283,61 @@ npx serve dist -s  # o -s serve a SPA com o mesmo fallback da Vercel
 
 > A versão web serve para **avaliação e demonstração**. O produto foi desenhado para
 > celular: use o Expo Go para ver a experiência real.
+
+---
+
+## Design system e responsividade
+
+O produto é **uma base de código só** (Expo) servindo celular e navegador. A adaptação é
+feita por **largura da janela**, nunca por plataforma — um celular no navegador precisa da
+experiência de celular, não da de desktop.
+
+### Três experiências
+
+| Faixa | Navegação | Conteúdo |
+| --- | --- | --- |
+| **Mobile** `< 768px` | Barra inferior com 4 destinos | Uma coluna, cards empilhados, CTA de largura total |
+| **Tablet** `768–1199px` | Barra inferior | Formulários em linha, "Como funciona" em 2 colunas |
+| **Desktop** `≥ 1200px` | **Sidebar** com ícone, texto, item ativo, notificações e conta | Grades de 2 colunas, página da vaga em duas colunas com CTA fixo à direita, candidatos em **mestre-detalhe** |
+
+Larguras máximas evitam o texto esticado: **720px** para formulários e leitura, **1180px**
+para painéis e grades.
+
+### Tokens
+
+Tudo vem de [`src/lib/theme.ts`](src/lib/theme.ts) — nenhum valor solto nos componentes:
+
+```text
+colors     escala de marca (teal 50→900) + neutros + semânticas + foco
+spacing    xxs 2 · xs 4 · sm 8 · md 12 · lg 16 · xl 20 · xxl 24 · xxxl 32 · huge 40 …
+radius     xs 6 · sm 8 · md 12 · lg 16 · xl 20 · pill
+typography display · title · section · subsection · body · small · caption · overline
+shadow     xs · sm · md   (profundidade vem da borda, não da sombra)
+breakpoints / layout / TOUCH_TARGET (48dp) / motion
+```
+
+### Componentes reutilizáveis
+
+`Button` · `TextField` · `Card` · `Chip` · `Badge` · `Avatar` · `Logo` · `MatchBadge` ·
+`StatTile` · `Skeleton` · `SkeletonCard` · `SkeletonList` · `EmptyState` · `ErrorState` ·
+`PageHeader` · `SectionHeader` · `FormSection` · `OptionGroup` · `Screen` · `Toast` —
+mais os de domínio `JobCard`, `WorkerCard`, `AvailabilityGrid`, `SkillPicker`,
+`MatchReasons`, `ProfileProgress`, `CandidateDetail`, `Sidebar` e `BottomBar`.
+
+### Acessibilidade
+
+- **Foco de teclado visível** em todo elemento interativo (o React Native Web não fornece
+  um anel utilizável; `useInteractionState` resolve isso de forma uniforme).
+- Enter envia os formulários de login, cadastro e habilidade personalizada.
+- Áreas de toque de no mínimo 48dp.
+- O selo de compatibilidade **nunca depende só de cor**: traz sempre o número e, a partir
+  do tamanho médio, também ícone e rótulo da faixa.
+- `accessibilityRole`, `accessibilityLabel` e `accessibilityState` nos componentes;
+  cabeçalhos com nível declarado; barra de progresso do perfil com valor anunciado.
+- Contraste de texto sobre fundo em no mínimo 4.5:1.
+
+O levantamento completo do que estava errado antes e o que mudou está em
+[`docs/AUDITORIA_UI_UX.md`](docs/AUDITORIA_UI_UX.md).
 
 ---
 
