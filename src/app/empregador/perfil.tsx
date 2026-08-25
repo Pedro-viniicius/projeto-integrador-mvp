@@ -1,36 +1,42 @@
-import React, { useState } from 'react';
+import React from 'react';
+import { View } from 'react-native';
 import { NotificationButton } from '@/components/NotificationButton';
-import { AppText, Button, Card, LoadingState, Screen } from '@/components/ui';
+import {
+  AppText,
+  Button,
+  Card,
+  PageHeader,
+  Screen,
+  SkeletonList,
+  useToast,
+} from '@/components/ui';
 import { useSession } from '@/features/auth/session-context';
 import { EmployerProfileForm } from '@/features/employers/EmployerProfileForm';
 import { api } from '@/services';
 import { DEMO_CITY } from '@/services/demo/seed';
-import { colors } from '@/lib/theme';
+import { spacing } from '@/lib/theme';
 
 /** Edição do perfil do empregador (RF-009). */
 export default function EmployerProfileScreen() {
   const { user, employerProfile, refresh, signOut } = useSession();
-  const [saved, setSaved] = useState(false);
+  const toast = useToast();
 
   if (!employerProfile) {
     return (
-      <Screen title="Meu perfil">
-        <LoadingState />
+      <Screen width="reading">
+        <PageHeader title="Meu perfil" />
+        <SkeletonList count={2} label="Carregando perfil" />
       </Screen>
     );
   }
 
   return (
-    <Screen
-      title="Meu perfil"
-      subtitle="Essas informações aparecem para os candidatos."
-      headerRight={<NotificationButton userId={user?.id} />}
-    >
-      {saved ? (
-        <AppText variant="small" color={colors.success}>
-          Perfil atualizado.
-        </AppText>
-      ) : null}
+    <Screen width="reading" bottomInset={spacing.giant}>
+      <PageHeader
+        title="Meu perfil"
+        subtitle="Estas informações aparecem para os candidatos."
+        aside={<NotificationButton userId={user?.id} />}
+      />
 
       <EmployerProfileForm
         city={employerProfile.city || DEMO_CITY}
@@ -40,16 +46,25 @@ export default function EmployerProfileScreen() {
           if (!user) return;
           await api.saveEmployerProfile(user.id, values);
           await refresh();
-          setSaved(true);
+          toast.success('Perfil atualizado.');
         }}
       />
 
-      <Card>
-        <AppText variant="section">Conta</AppText>
+      <Card padding="lg">
+        <AppText variant="section" accessibilityRole="header">
+          Conta
+        </AppText>
         <AppText variant="small" muted>
           {user?.email}
         </AppText>
-        <Button label="Sair da conta" variant="danger" onPress={() => void signOut()} />
+        <View>
+          <Button
+            label="Sair da conta"
+            variant="danger"
+            icon="log-out-outline"
+            onPress={() => void signOut()}
+          />
+        </View>
       </Card>
     </Screen>
   );

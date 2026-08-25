@@ -1,33 +1,25 @@
 import React, { useMemo } from 'react';
-import { View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { AvailabilityGrid } from '@/components/AvailabilityGrid';
-import { MatchReasons } from '@/components/MatchReasons';
-import {
-  AppText,
-  Button,
-  Card,
-  Chip,
-  ErrorState,
-  LoadingState,
-  ScoreBadge,
-  Screen,
-} from '@/components/ui';
+import { Button, ErrorState, PageHeader, Screen, SkeletonList } from '@/components/ui';
 import { useSession } from '@/features/auth/session-context';
-import { CandidateActions } from '@/features/applications/CandidateActions';
+import { CandidateDetail } from '@/features/applications/CandidateDetail';
 import { useEmployerApplications } from '@/features/applications/hooks';
 import { useJob } from '@/features/jobs/hooks';
 import { computeMatch } from '@/features/matching';
 import { useActiveWorkers } from '@/features/workers/hooks';
-import { EMPLOYMENT_PREFERENCE_LABEL } from '@/lib/labels';
-import { displaySkill } from '@/lib/skills';
 import { spacing } from '@/lib/theme';
 
-/** Perfil completo do candidato, com o match explicado (RF-011, RF-015). */
+/**
+ * Perfil completo do candidato (RF-011, RF-015).
+ *
+ * No desktop este conteúdo aparece embutido na tela de candidatos; esta rota
+ * atende o celular e o link direto.
+ */
 export default function CandidateDetailScreen() {
   const { id, vaga } = useLocalSearchParams<{ id: string; vaga?: string }>();
   const router = useRouter();
   const { user } = useSession();
+
   const workersQuery = useActiveWorkers();
   const jobQuery = useJob(vaga);
   const applicationsQuery = useEmployerApplications(user?.id);
@@ -35,99 +27,41 @@ export default function CandidateDetailScreen() {
   const worker = (workersQuery.data ?? []).find((item) => item.userId === id) ?? null;
   const job = jobQuery.data ?? null;
 
-  const match = useMemo(
-    () => (worker && job ? computeMatch(worker, job) : null),
-    [worker, job],
-  );
-
+  const match = useMemo(() => (worker && job ? computeMatch(worker, job) : null), [worker, job]);
   const application = (applicationsQuery.data ?? []).find(
     (item) => item.workerId === id && item.jobId === vaga,
   );
 
-  if (workersQuery.isLoading) {
+  if (workersQuery.isLoading || jobQuery.isLoading) {
     return (
-      <Screen>
-        <LoadingState />
+      <Screen width="reading">
+        <SkeletonList count={2} label="Carregando candidato" />
       </Screen>
     );
   }
 
-  if (!worker) {
+  if (!worker || !job || !user) {
     return (
-      <Screen>
+      <Screen width="reading">
         <ErrorState
           title="Candidato não encontrado"
           message="O perfil pode ter sido pausado pelo próprio trabalhador."
         />
-        <Button label="Voltar" variant="secondary" onPress={() => router.back()} />
+        <Button label="Voltar" variant="secondary" icon="arrow-back" onPress={() => router.back()} />
       </Screen>
     );
   }
 
   return (
-    <Screen title={worker.fullName} subtitle={worker.headline}>
-      {match ? (
-        <Card>
-          <ScoreBadge score={match.score} tier={match.tier} size="large" />
-          <AppText variant="small" muted>
-            {match.tierLabel} para a vaga {job?.title}
-          </AppText>
-          <MatchReasons reasons={match.reasons} />
-        </Card>
-      ) : null}
-
-      <Card>
-        <AppText variant="section">Experiência</AppText>
-        <AppText variant="body">
-          {worker.experience.trim().length > 0
-            ? worker.experience
-            : 'O candidato ainda não descreveu sua experiência.'}
-        </AppText>
-      </Card>
-
-      <Card>
-        <AppText variant="section">Habilidades</AppText>
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm }}>
-          {worker.skills.map((skill) => (
-            <Chip
-              key={skill}
-              label={displaySkill(skill)}
-              tone={match?.matchedSkills.includes(skill) ? 'success' : 'neutral'}
-            />
-          ))}
-        </View>
-        <AppText variant="small" muted>
-          Aceita: {EMPLOYMENT_PREFERENCE_LABEL[worker.employmentPreference]}
-        </AppText>
-        <AppText variant="small" muted>
-          {worker.neighborhood ? `${worker.neighborhood} • ${worker.city}` : worker.city}
-        </AppText>
-      </Card>
-
-      <Card>
-        <AppText variant="section">Disponibilidade</AppText>
-        <AvailabilityGrid
-          value={worker.availability}
-          highlight={job?.requiredAvailability}
-          readOnly
-        />
-      </Card>
-
-      <Card>
-        <AppText variant="section">Contato</AppText>
-        {application && job && user ? (
-          <CandidateActions
-            application={application}
-            worker={worker}
-            job={job}
-            employerId={user.id}
-          />
-        ) : (
-          <AppText variant="small" muted>
-            O contato é liberado depois que o candidato demonstrar interesse e você aceitar.
-          </AppText>
-        )}
-      </Card>
+    <Screen width="reading" bottomInset={spacing.giant}>
+      <PageHeader title={worker.fullName} subtitle={`Candidato para ${job.title}`} />
+      <CandidateDetail
+        worker={worker}
+        job={job}
+        match={match}
+        application={application}
+        employerId={user.id}
+      />
     </Screen>
   );
 }
