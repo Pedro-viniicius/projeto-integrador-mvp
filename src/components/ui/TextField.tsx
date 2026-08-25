@@ -1,5 +1,6 @@
 import React, { useId } from 'react';
 import { StyleSheet, TextInput, View, type KeyboardTypeOptions } from 'react-native';
+import { useInteractionState } from '@/hooks/useInteractionState';
 import { colors, radius, spacing, TOUCH_TARGET, typography } from '@/lib/theme';
 import { AppText } from './Text';
 
@@ -8,7 +9,6 @@ interface TextFieldProps {
   value: string;
   onChangeText: (value: string) => void;
   placeholder?: string;
-  /** Texto de apoio exibido abaixo do rótulo. */
   hint?: string;
   error?: string;
   multiline?: boolean;
@@ -17,9 +17,10 @@ interface TextFieldProps {
   secureTextEntry?: boolean;
   maxLength?: number;
   onBlur?: () => void;
-  /** Ação do botão "concluir" do teclado. Permite enviar o formulário sem tocar no botão. */
   onSubmitEditing?: () => void;
   returnKeyType?: 'done' | 'next' | 'send';
+  /** Mostra "0/280" abaixo do campo. */
+  showCounter?: boolean;
 }
 
 export function TextField({
@@ -37,11 +38,14 @@ export function TextField({
   onBlur,
   onSubmitEditing,
   returnKeyType,
+  showCounter = false,
 }: TextFieldProps) {
   const id = useId();
+  const { focused, handlers } = useInteractionState();
+
   return (
     <View style={styles.wrapper}>
-      <AppText variant="caption" style={styles.label} nativeID={`${id}-label`}>
+      <AppText variant="smallStrong" nativeID={`${id}-label`}>
         {label}
       </AppText>
       {hint ? (
@@ -49,15 +53,21 @@ export function TextField({
           {hint}
         </AppText>
       ) : null}
+
       <TextInput
         accessibilityLabel={label}
         accessibilityHint={hint}
         aria-labelledby={`${id}-label`}
+        aria-invalid={Boolean(error)}
         value={value}
         onChangeText={onChangeText}
-        onBlur={onBlur}
+        onBlur={() => {
+          handlers.onBlur();
+          onBlur?.();
+        }}
+        onFocus={handlers.onFocus}
         placeholder={placeholder}
-        placeholderTextColor={colors.textMuted}
+        placeholderTextColor={colors.textSubtle}
         multiline={multiline}
         keyboardType={keyboardType}
         autoCapitalize={autoCapitalize}
@@ -66,20 +76,34 @@ export function TextField({
         onSubmitEditing={onSubmitEditing}
         returnKeyType={returnKeyType}
         submitBehavior={multiline ? 'newline' : 'blurAndSubmit'}
-        style={[styles.input, multiline && styles.multiline, error ? styles.inputError : null]}
+        style={[
+          styles.input,
+          multiline && styles.multiline,
+          focused && styles.focused,
+          error ? styles.inputError : null,
+        ]}
       />
-      {error ? (
-        <AppText variant="caption" color={colors.danger} accessibilityRole="text">
-          {error}
-        </AppText>
-      ) : null}
+
+      <View style={styles.footer}>
+        <View style={styles.footerMain}>
+          {error ? (
+            <AppText variant="caption" color={colors.danger}>
+              {error}
+            </AppText>
+          ) : null}
+        </View>
+        {showCounter && maxLength ? (
+          <AppText variant="caption" subtle>
+            {value.length}/{maxLength}
+          </AppText>
+        ) : null}
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   wrapper: { gap: spacing.xs },
-  label: { color: colors.text },
   input: {
     minHeight: TOUCH_TARGET,
     borderWidth: 1,
@@ -91,6 +115,16 @@ const styles = StyleSheet.create({
     color: colors.text,
     ...typography.body,
   },
-  multiline: { minHeight: 110, textAlignVertical: 'top' },
+  multiline: { minHeight: 112, textAlignVertical: 'top', paddingTop: spacing.md },
+  focused: {
+    borderColor: colors.focus,
+    shadowColor: colors.focus,
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 0 },
+    elevation: 3,
+  },
   inputError: { borderColor: colors.danger },
+  footer: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, minHeight: 0 },
+  footerMain: { flex: 1 },
 });

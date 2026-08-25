@@ -1,5 +1,7 @@
 import React from 'react';
 import { Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { useInteractionState } from '@/hooks/useInteractionState';
 import { colors, radius, spacing } from '@/lib/theme';
 import { AppText } from './Text';
 
@@ -7,22 +9,29 @@ interface ChipProps {
   label: string;
   selected?: boolean;
   onPress?: () => void;
-  tone?: 'neutral' | 'primary' | 'success' | 'warning';
+  icon?: keyof typeof Ionicons.glyphMap;
   style?: StyleProp<ViewStyle>;
 }
 
-/** Etiqueta compacta, usada para habilidades, modelo de contratação e status. */
-export function Chip({ label, selected = false, onPress, tone = 'neutral', style }: ChipProps) {
-  const palette = selected ? TONES.selected : TONES[tone];
+/** Etiqueta selecionável: filtros e escolha de habilidades. */
+export function Chip({ label, selected = false, onPress, icon, style }: ChipProps) {
+  const { hovered, focused, handlers } = useInteractionState();
+  const palette = selected ? TONES.selected : TONES.base;
+
   const content = (
-    <AppText variant="caption" color={palette.fg} numberOfLines={1}>
-      {label}
-    </AppText>
+    <>
+      {icon ? <Ionicons name={icon} size={14} color={palette.fg} /> : null}
+      <AppText variant="caption" color={palette.fg} numberOfLines={1}>
+        {label}
+      </AppText>
+    </>
   );
 
   if (!onPress) {
     return (
-      <View style={[styles.chip, { backgroundColor: palette.bg, borderColor: palette.border }, style]}>
+      <View
+        style={[styles.chip, { backgroundColor: palette.bg, borderColor: palette.border }, style]}
+      >
         {content}
       </View>
     );
@@ -34,10 +43,13 @@ export function Chip({ label, selected = false, onPress, tone = 'neutral', style
       accessibilityState={{ checked: selected }}
       accessibilityLabel={label}
       onPress={onPress}
+      {...handlers}
       style={({ pressed }) => [
         styles.chip,
         styles.touchable,
         { backgroundColor: palette.bg, borderColor: palette.border },
+        hovered && !selected && styles.hovered,
+        focused && styles.focused,
         pressed && styles.pressed,
         style,
       ]}
@@ -48,20 +60,22 @@ export function Chip({ label, selected = false, onPress, tone = 'neutral', style
 }
 
 const TONES = {
-  neutral: { bg: colors.surfaceAlt, fg: colors.textMuted, border: colors.border },
-  primary: { bg: colors.primarySoft, fg: colors.primaryText, border: colors.primarySoft },
-  success: { bg: colors.successSoft, fg: colors.success, border: colors.successSoft },
-  warning: { bg: colors.warningSoft, fg: colors.warning, border: colors.warningSoft },
+  base: { bg: colors.surface, fg: colors.textSecondary, border: colors.border },
   selected: { bg: colors.primary, fg: colors.textInverse, border: colors.primary },
 } as const;
 
 const styles = StyleSheet.create({
   chip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
     borderRadius: radius.pill,
     borderWidth: 1,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
   },
   touchable: { minHeight: 40, justifyContent: 'center' },
+  hovered: { borderColor: colors.borderStrong, backgroundColor: colors.surfaceAlt },
+  focused: { borderColor: colors.focus },
   pressed: { opacity: 0.85 },
 });
