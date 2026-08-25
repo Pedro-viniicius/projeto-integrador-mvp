@@ -1,36 +1,53 @@
-import React, { useState } from 'react';
+import React, { useMemo } from 'react';
+import { View } from 'react-native';
+import { useRouter } from 'expo-router';
 import { NotificationButton } from '@/components/NotificationButton';
-import { AppText, Button, Card, LoadingState, Screen } from '@/components/ui';
+import { ProfileProgress } from '@/components/ProfileProgress';
+import {
+  AppText,
+  Button,
+  Card,
+  PageHeader,
+  Screen,
+  SkeletonList,
+  useToast,
+} from '@/components/ui';
 import { useSession } from '@/features/auth/session-context';
+import { computeCompleteness } from '@/features/workers/profile-completeness';
 import { WorkerProfileForm } from '@/features/workers/WorkerProfileForm';
 import { api } from '@/services';
 import { DEMO_CITY } from '@/services/demo/seed';
-import { colors } from '@/lib/theme';
+import { spacing } from '@/lib/theme';
 
 /** Edição do perfil do trabalhador (RF-006, RF-007, RF-008). */
 export default function WorkerProfileScreen() {
   const { user, workerProfile, refresh, signOut } = useSession();
-  const [saved, setSaved] = useState(false);
+  const router = useRouter();
+  const toast = useToast();
+
+  const completeness = useMemo(() => computeCompleteness(workerProfile), [workerProfile]);
 
   if (!workerProfile) {
     return (
-      <Screen title="Meu perfil">
-        <LoadingState />
+      <Screen width="reading">
+        <PageHeader title="Meu perfil" />
+        <SkeletonList count={2} label="Carregando perfil" />
       </Screen>
     );
   }
 
   return (
-    <Screen
-      title="Meu perfil"
-      subtitle="Mantenha seus horários atualizados para receber vagas melhores."
-      headerRight={<NotificationButton userId={user?.id} />}
-    >
-      {saved ? (
-        <AppText variant="small" color={colors.success}>
-          Perfil atualizado.
-        </AppText>
-      ) : null}
+    <Screen width="reading" bottomInset={spacing.giant}>
+      <PageHeader
+        title="Meu perfil"
+        subtitle="Mantenha seus horários atualizados para receber vagas melhores."
+        aside={<NotificationButton userId={user?.id} />}
+      />
+
+      <ProfileProgress
+        completeness={completeness}
+        onEdit={() => router.push('/trabalhador/oportunidades')}
+      />
 
       <WorkerProfileForm
         city={workerProfile.city || DEMO_CITY}
@@ -41,16 +58,25 @@ export default function WorkerProfileScreen() {
           if (!user) return;
           await api.saveWorkerProfile(user.id, values);
           await refresh();
-          setSaved(true);
+          toast.success('Perfil atualizado.');
         }}
       />
 
-      <Card>
-        <AppText variant="section">Conta</AppText>
+      <Card padding="lg">
+        <AppText variant="section" accessibilityRole="header">
+          Conta
+        </AppText>
         <AppText variant="small" muted>
           {user?.email}
         </AppText>
-        <Button label="Sair da conta" variant="danger" onPress={() => void signOut()} />
+        <View>
+          <Button
+            label="Sair da conta"
+            variant="danger"
+            icon="log-out-outline"
+            onPress={() => void signOut()}
+          />
+        </View>
       </Card>
     </Screen>
   );
